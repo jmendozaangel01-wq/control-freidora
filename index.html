@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Freidora — Planta Patacón</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #161a1f;
+    --surface2: #1e2328;
+    --border: #2a3040;
+    --text: #e8eaf0;
+    --muted: #6b7585;
+    --green: #00e676;
+    --yellow: #ffd740;
+    --red: #ff5252;
+    --orange: #ff9800;
+    --accent: #00b8d9;
+    --font-mono: 'Space Mono', monospace;
+    --font-main: 'Barlow Condensed', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-main);
+    font-size: 16px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand {
+    display: flex;
+    flex-direction: column;
+  }
+  .brand-title {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .brand-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    letter-spacing: 1px;
+  }
+  .header-clock {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    color: var(--text);
+    text-align: right;
+  }
+  .header-date {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.yellow::before { background: var(--yellow); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.neutral::before { background: var(--accent); }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-family: var(--font-mono);
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 900;
+    margin-top: 4px;
+    line-height: 1;
+  }
+  .stat-value.green { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red { color: var(--red); }
+  .stat-verdict {
+    font-size: 12px;
+    margin-top: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* FORM SECTION */
+  .section-title {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--font-mono);
+  }
+  .field input, .field select, .field textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+
+  .field-indicator {
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 2px;
+    transition: background 0.3s;
+    background: var(--border);
+  }
+
+  /* RLU special */
+  .rlu-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .rlu-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 10px;
+  }
+  .badge-green { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid var(--green); }
+  .badge-red { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid var(--red); }
+  .badge-gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* BTN */
+  .btn {
+    font-family: var(--font-main);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 32px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    margin-left: 10px;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* LOG TABLE */
+  .log-wrap {
+    overflow-x: auto;
+    margin-top: 28px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    text-align: left;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--surface); }
+  tbody td {
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .pill-green { background: rgba(0,230,118,0.15); color: var(--green); }
+  .pill-yellow { background: rgba(255,215,64,0.15); color: var(--yellow); }
+  .pill-red { background: rgba(255,82,82,0.15); color: var(--red); }
+
+  /* ALERT */
+  .alert-box {
+    background: rgba(255,82,82,0.08);
+    border: 1px solid rgba(255,82,82,0.4);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--red);
+    display: none;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .alert-box.show { display: block; }
+
+  .warn-box {
+    background: rgba(255,215,64,0.08);
+    border: 1px solid rgba(255,215,64,0.4);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--yellow);
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: none;
+  }
+  .warn-box.show { display: block; }
+
+  /* Export btn */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .records-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* INICIO DE TURNO */
+  .inicio-turno-wrap {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .inicio-estado-pendiente {
+    background: rgba(255,215,64,0.08);
+    border: 1px solid rgba(255,215,64,0.35);
+    color: var(--yellow);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .inicio-estado-ok {
+    background: rgba(0,230,118,0.08);
+    border: 1px solid rgba(0,230,118,0.35);
+    color: var(--green);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .inicio-estado-fail {
+    background: rgba(255,82,82,0.08);
+    border: 1px solid rgba(255,82,82,0.35);
+    color: var(--red);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .inicio-turno-collapsed { padding: 14px 24px; }
+  .inicio-turno-collapsed .form-grid,
+  .inicio-turno-collapsed .rlu-badge,
+  .inicio-turno-collapsed > div:last-of-type { display: none; }
+
+  /* LIMITS MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    color: var(--accent);
+  }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-title">🍟 Control Freidora</div>
+    <div class="brand-sub">Planta de Producción — Patacón</div>
+  </div>
+  <div>
+    <div class="header-clock" id="clock">--:--:--</div>
+    <div class="header-date" id="dateStr">--</div>
+    <div id="syncEstado" style="font-size:11px;text-align:right;margin-top:4px;font-family:var(--font-mono);color:var(--muted)">⟳ Conectando...</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- VERIFICACIÓN INICIO DE TURNO -->
+  <div class="inicio-turno-wrap" id="inicioTurnoWrap">
+    <div class="section-title" style="margin-bottom:14px">🔬 Verificación Inicio de Turno</div>
+    <div id="inicioTurnoEstado" class="inicio-estado-pendiente">⏳ Sin verificación registrada para este turno</div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="field">
+        <label>Turno</label>
+        <select id="itTurno">
+          <option value="Mañana">Mañana</option>
+          <option value="Tarde">Tarde</option>
+          <option value="Noche">Noche</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Operario</label>
+        <input type="text" id="itOperario" placeholder="Nombre">
+      </div>
+      <div class="field">
+        <label>Resultado RLU</label>
+        <input type="number" id="itRLU" placeholder="ej. 25" min="0" step="1">
+        <div class="field-indicator" id="indITRLU"></div>
+      </div>
+      <div class="field">
+        <label>Tipo de Lectura</label>
+        <select id="itRLUTipo">
+          <option value="Equipo (Freidora)">Equipo (Freidora)</option>
+          <option value="Agua de enjuague">Agua de enjuague</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Limpieza / Desinfección</label>
+        <select id="itLimpieza">
+          <option value="">— Seleccionar —</option>
+          <option value="Completa">Completa ✅</option>
+          <option value="Parcial">Parcial ⚡</option>
+          <option value="Pendiente">Pendiente ❌</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Observaciones</label>
+        <input type="text" id="itNotas" placeholder="Notas de limpieza...">
+      </div>
+    </div>
+    <div id="itRLUVerdict" class="rlu-badge badge-gray" style="margin-top:10px">SIN LECTURA</div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="registrarInicioTurno()">✔ Confirmar Inicio de Turno</button>
+      <button class="btn btn-secondary" onclick="toggleInicioTurno()">Minimizar</button>
+    </div>
+  </div>
+
+  <!-- STATUS CARDS -->
+  <div class="status-bar" id="statusBar">
+    <div class="stat-card neutral">
+      <div class="stat-label">Registros Hoy</div>
+      <div class="stat-value accent" id="sRegistros" style="color:var(--accent)">0</div>
+      <div class="stat-verdict" style="color:var(--muted)">inspecciones</div>
+    </div>
+    <div class="stat-card neutral" id="cardPolares">
+      <div class="stat-label">Últ. Compuestos Polares</div>
+      <div class="stat-value" id="sPolares">—</div>
+      <div class="stat-verdict" id="sPolaresTxt" style="color:var(--muted)">sin datos</div>
+    </div>
+    <div class="stat-card neutral" id="cardTemp">
+      <div class="stat-label">Últ. Temperatura</div>
+      <div class="stat-value" id="sTemp">—</div>
+      <div class="stat-verdict" id="sTempTxt" style="color:var(--muted)">sin datos</div>
+    </div>
+    <div class="stat-card neutral" id="cardRLU">
+      <div class="stat-label">RLU Inicio Turno</div>
+      <div class="stat-value" id="sRLU">—</div>
+      <div class="stat-verdict" id="sRLUTxt" style="color:var(--muted)">sin datos</div>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="alert-box" id="alertBox">⚠ ACCIÓN REQUERIDA: <span id="alertMsg"></span></div>
+  <div class="warn-box" id="warnBox">⚡ ADVERTENCIA: <span id="warnMsg"></span></div>
+
+  <!-- REGISTRO FORM -->
+  <div class="section-title">Nueva Inspección — Cada Hora</div>
+
+  <div class="form-grid">
+    <div class="field">
+      <label>Hora de Inspección</label>
+      <input type="time" id="fHora">
+    </div>
+    <div class="field">
+      <label>Turno</label>
+      <select id="fTurno">
+        <option value="Mañana">Mañana</option>
+        <option value="Tarde">Tarde</option>
+        <option value="Noche">Noche</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Operario</label>
+      <input type="text" id="fOperario" placeholder="Nombre">
+    </div>
+  </div>
+
+  <div class="section-title">Aceite</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Compuestos Polares (número entero)</label>
+      <input type="number" id="fPolares" placeholder="0 – 50+" min="0" max="999" step="1">
+      <div class="field-indicator" id="indPolares"></div>
+    </div>
+    <div class="field">
+      <label>Temperatura (°C)</label>
+      <input type="number" id="fTemp" placeholder="ej. 175" min="100" max="220" step="0.5">
+      <div class="field-indicator" id="indTemp"></div>
+    </div>
+    <div class="field">
+      <label>Tiempo de Fritura (min)</label>
+      <input type="number" id="fTiempo" placeholder="ej. 4" min="0" max="60" step="0.5">
+    </div>
+  </div>
+
+  <!-- NOTAS -->
+  <div class="form-grid" style="grid-template-columns: 1fr;">
+    <div class="field">
+      <label>Observaciones</label>
+      <textarea id="fNotas" rows="2" style="font-family:var(--font-mono);font-size:13px;resize:vertical" placeholder="Notas adicionales..."></textarea>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:8px;">
+    <button class="btn btn-primary" onclick="registrar()">Registrar Inspección</button>
+    <button class="btn btn-secondary" onclick="limpiarForm()">Limpiar</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('modalLimites').classList.add('open')">⚙ Límites críticos</button>
+  </div>
+
+  <!-- LOG INSPECCIONES HORARIAS -->
+  <div class="log-wrap">
+    <div class="toolbar" style="margin-top:32px">
+      <div class="section-title" style="margin:0">Historial de Inspecciones</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="records-count" id="recCount">0 registros</span>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px" onclick="exportarCSV()">📥 Exportar Excel</button>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px;color:var(--red);border-color:rgba(255,82,82,0.3)" onclick="borrarHistorial()">Borrar</button>
+      </div>
+    </div>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Turno</th>
+          <th>Operario</th>
+          <th>Polares</th>
+          <th>Temp °C</th>
+          <th>T. Fritura</th>
+          <th>Apta</th>
+          <th>Obs.</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <tr><td colspan="9"><div class="empty-state">Sin registros aún. Ingresa la primera inspección.</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LOG INICIO DE TURNO -->
+  <div class="log-wrap">
+    <div class="toolbar" style="margin-top:32px">
+      <div class="section-title" style="margin:0">Historial — Verificaciones de Inicio de Turno</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px;color:var(--red);border-color:rgba(255,82,82,0.3)" onclick="borrarInicioTurnos()">Borrar</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Operario</th>
+          <th>RLU</th>
+          <th>Tipo RLU</th>
+          <th>Limpieza</th>
+          <th>Estado</th>
+          <th>Obs.</th>
+        </tr>
+      </thead>
+      <tbody id="logITBody">
+        <tr><td colspan="8"><div class="empty-state">Sin verificaciones de inicio de turno aún.</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- MODAL LÍMITES -->
+<div class="modal-overlay" id="modalLimites">
+  <div class="modal">
+    <div class="modal-title">⚙ Límites Críticos</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;font-family:var(--font-mono)">Ajusta los valores según tu protocolo HACCP</p>
+    <div class="modal-grid">
+      <div class="field">
+        <label>Polares Advertencia (%)</label>
+        <input type="number" id="limPolaresWarn" value="30">
+      </div>
+      <div class="field">
+        <label>Polares Límite Crítico (%)</label>
+        <input type="number" id="limPolaresCrit" value="50">
+      </div>
+      <div class="field">
+        <label>Temp. Mínima (°C)</label>
+        <input type="number" id="limTempMin" value="165">
+      </div>
+      <div class="field">
+        <label>Temp. Máxima (°C)</label>
+        <input type="number" id="limTempMax" value="185">
+      </div>
+      <div class="field">
+        <label>RLU Advertencia (≤)</label>
+        <input type="number" id="limRLUOk" value="30">
+      </div>
+      <div class="field">
+        <label>RLU Límite (≤)</label>
+        <input type="number" id="limRLUCrit" value="100">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="guardarLimites()">Guardar</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalLimites').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── LIMITES (localStorage) ───
+let L = {
+  polaresWarn: 30, polaresCrit: 50,
+  tempMin: 165, tempMax: 185,
+  rluOk: 30, rluCrit: 100
+};
+function cargarLimites() {
+  const s = localStorage.getItem('freidora_limites');
+  if (s) L = JSON.parse(s);
+  document.getElementById('limPolaresWarn').value = L.polaresWarn;
+  document.getElementById('limPolaresCrit').value = L.polaresCrit;
+  document.getElementById('limTempMin').value = L.tempMin;
+  document.getElementById('limTempMax').value = L.tempMax;
+  document.getElementById('limRLUOk').value = L.rluOk;
+  document.getElementById('limRLUCrit').value = L.rluCrit;
+}
+function guardarLimites() {
+  L.polaresWarn = +document.getElementById('limPolaresWarn').value;
+  L.polaresCrit = +document.getElementById('limPolaresCrit').value;
+  L.tempMin = +document.getElementById('limTempMin').value;
+  L.tempMax = +document.getElementById('limTempMax').value;
+  L.rluOk = +document.getElementById('limRLUOk').value;
+  L.rluCrit = +document.getElementById('limRLUCrit').value;
+  localStorage.setItem('freidora_limites', JSON.stringify(L));
+  document.getElementById('modalLimites').classList.remove('open');
+  renderLog();
+}
+
+// ─── GOOGLE SHEETS API ───
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxBypeIIOd39UhZygLt6M0ZfZoKR4PMQxXo0AAEeN8M5Gz7a3Ueo0agOsoMtqnGm0JO/exec';
+
+async function enviarASheets(data) {
+  try {
+    const params = new URLSearchParams(data).toString();
+    await fetch(SHEETS_URL + '?' + params, { method: 'GET', mode: 'no-cors' });
+    mostrarSyncEstado('ok');
+  } catch(e) {
+    mostrarSyncEstado('error');
+    console.warn('Error enviando a Sheets:', e);
+  }
+}
+
+async function cargarDesdeSheets() {
+  try {
+    mostrarSyncEstado('syncing');
+    const res = await fetch(SHEETS_URL + '?t=' + Date.now());
+    const data = await res.json();
+    if (data.inspecciones) {
+      registros = data.inspecciones.reverse();
+      localStorage.setItem('freidora_log', JSON.stringify(registros));
+    }
+    if (data.inicioTurnos) {
+      inicioTurnos = data.inicioTurnos.reverse();
+      localStorage.setItem('freidora_inicio_turnos', JSON.stringify(inicioTurnos));
+    }
+    renderLog();
+    renderInicioTurno();
+    mostrarSyncEstado('ok');
+  } catch(e) {
+    mostrarSyncEstado('error');
+    console.warn('No se pudo cargar desde Sheets, usando datos locales');
+  }
+}
+
+function mostrarSyncEstado(estado) {
+  const el = document.getElementById('syncEstado');
+  if (!el) return;
+  if (estado === 'syncing') { el.textContent = '⟳ Sincronizando...'; el.style.color = 'var(--muted)'; }
+  else if (estado === 'ok') { el.textContent = '✓ Sincronizado con Google Sheets'; el.style.color = 'var(--green)'; }
+  else { el.textContent = '⚠ Sin conexión — datos locales'; el.style.color = 'var(--yellow)'; }
+}
+
+// ─── REGISTROS ───
+let registros = [];
+function cargarRegistros() {
+  const s = localStorage.getItem('freidora_log');
+  if (s) registros = JSON.parse(s);
+}
+function guardarRegistros() {
+  localStorage.setItem('freidora_log', JSON.stringify(registros));
+}
+
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-CO');
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('es-CO', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// hora actual en form
+function setHoraActual() {
+  const now = new Date();
+  document.getElementById('fHora').value = now.toTimeString().slice(0,5);
+}
+
+// ─── EVALUACIÓN ───
+function evalPolares(v) {
+  if (v === '' || isNaN(v) || v === 0 && document.getElementById('fPolares')?.value === '') return null;
+  if (v <= 10) return 'green';      // Excelente
+  if (v <= 30) return 'green2';     // Aceptable
+  if (v <= 50) return 'yellow';     // Límite / Revisión
+  return 'red';                     // No cumple
+}
+function evalPolaresLabel(v) {
+  if (!v || isNaN(v)) return null;
+  if (v <= 10) return '✓ Excelente';
+  if (v <= 30) return '✓ Aceptable';
+  if (v <= 50) return '⚡ Límite — Tomar 2da lectura';
+  return '✗ No cumple';
+}
+function evalPolaresColor(status) {
+  if (status === 'green' || status === 'green2') return 'var(--green)';
+  if (status === 'yellow') return 'var(--yellow)';
+  if (status === 'red') return 'var(--red)';
+  return 'var(--muted)';
+}
+function evalTemp(v) {
+  if (v === '' || isNaN(v)) return null;
+  if (v >= L.tempMin && v <= L.tempMax) return 'green';
+  if (v < L.tempMin - 10 || v > L.tempMax + 10) return 'red';
+  return 'yellow';
+}
+function evalRLU(v) {
+  if (v === '' || isNaN(v) || v === undefined) return null;
+  if (v <= 10)  return 'green';   // Excelente / Muy limpio
+  if (v <= 30)  return 'green2';  // Aceptable
+  if (v <= 100) return 'yellow';  // Advertencia
+  return 'red';                   // No cumple / Superficie sucia
+}
+function evalRLULabel(v) {
+  if (!v && v !== 0) return null;
+  if (v <= 10)  return '✓ Excelente / Muy limpio';
+  if (v <= 30)  return '✓ Aceptable';
+  if (v <= 100) return '⚡ Advertencia — Mejorar limpieza';
+  return '✗ No cumple — Superficie sucia';
+}
+function evalRLUColor(status) {
+  if (status === 'green' || status === 'green2') return 'var(--green)';
+  if (status === 'yellow') return 'var(--yellow)';
+  if (status === 'red') return 'var(--red)';
+  return 'var(--muted)';
+}
+
+function aptaProduccion(r) {
+  const pol = evalPolares(r.polares);
+  const temp = evalTemp(r.temp);
+  const rlu = evalRLU(r.rlu);
+  if (pol === 'red' || temp === 'red' || rlu === 'red') return 'red';
+  if (pol === 'yellow' || temp === 'yellow' || rlu === 'yellow') return 'yellow';
+  return 'green';
+}
+
+// ─── INDICADORES EN TIEMPO REAL ───
+document.getElementById('fPolares').addEventListener('input', function() {
+  const v = +this.value;
+  const c = evalPolares(v);
+  const el = document.getElementById('indPolares');
+  el.style.background = evalPolaresColor(c);
+
+  // Mostrar/ocultar caja de recomendación
+  let box = document.getElementById('polaresRecomBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'polaresRecomBox';
+    box.style.cssText = 'margin-top:8px;padding:10px 14px;border-radius:6px;font-size:12px;font-family:var(--font-mono);line-height:1.6;display:none;';
+    document.getElementById('indPolares').parentNode.appendChild(box);
+  }
+  if (!this.value) { box.style.display = 'none'; return; }
+  if (c === 'yellow') {
+    box.style.display = 'block';
+    box.style.background = 'rgba(255,215,64,0.08)';
+    box.style.border = '1px solid rgba(255,215,64,0.4)';
+    box.style.color = 'var(--yellow)';
+    box.innerHTML = `⚡ <strong>LÍMITE (${v})</strong> — Tomar una segunda lectura.<br>Si la 2da lectura confirma: llamar al Ingeniero de Calidad.<br>Considerar mezclar aceite nuevo para bajar el compuesto polar.`;
+  } else if (c === 'red') {
+    box.style.display = 'block';
+    box.style.background = 'rgba(255,82,82,0.08)';
+    box.style.border = '1px solid rgba(255,82,82,0.4)';
+    box.style.color = 'var(--red)';
+    box.innerHTML = `✗ <strong>NO CUMPLE (${v})</strong> — Detener uso del aceite.<br>Llamar al Ingeniero de Calidad de inmediato.<br>Evaluar cambio total del aceite.`;
+  } else {
+    box.style.display = 'none';
+  }
+});
+document.getElementById('fTemp').addEventListener('input', function() {
+  const c = evalTemp(+this.value);
+  const el = document.getElementById('indTemp');
+  el.style.background = c === 'green' ? 'var(--green)' : c === 'yellow' ? 'var(--yellow)' : c === 'red' ? 'var(--red)' : 'var(--border)';
+});
+// RLU inicio de turno - indicador en tiempo real
+document.getElementById('itRLU').addEventListener('input', function() {
+  const v = +this.value;
+  const c = evalRLU(v);
+  document.getElementById('indITRLU').style.background = evalRLUColor(c);
+  const verdict = document.getElementById('itRLUVerdict');
+  if (!this.value) { verdict.className = 'rlu-badge badge-gray'; verdict.style = ''; verdict.textContent = 'SIN LECTURA'; return; }
+  const label = evalRLULabel(v);
+  if (c === 'green' || c === 'green2') {
+    verdict.className = 'rlu-badge badge-green'; verdict.style = '';
+    verdict.textContent = label;
+  } else if (c === 'yellow') {
+    verdict.className = ''; verdict.style.cssText = 'display:inline-block;padding:6px 18px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:10px;border:1px solid var(--yellow);color:var(--yellow);background:rgba(255,215,64,0.1)';
+    verdict.textContent = label;
+  } else {
+    verdict.className = 'rlu-badge badge-red'; verdict.style = '';
+    verdict.textContent = label;
+  }
+});
+
+// ─── INICIO DE TURNO ───
+let inicioTurnos = [];
+function cargarInicioTurnos() {
+  const s = localStorage.getItem('freidora_inicio_turnos');
+  if (s) inicioTurnos = JSON.parse(s);
+}
+function guardarInicioTurnos() {
+  localStorage.setItem('freidora_inicio_turnos', JSON.stringify(inicioTurnos));
+}
+
+function registrarInicioTurno() {
+  const rlu = document.getElementById('itRLU').value;
+  const limpieza = document.getElementById('itLimpieza').value;
+  if (!rlu && !limpieza) { alert('Ingresa al menos el RLU o el estado de limpieza.'); return; }
+  const rluStatus = evalRLU(+rlu);
+  const ok = (rluStatus === 'green' || rluStatus === 'green2' || rluStatus === 'yellow') && limpieza !== 'Pendiente';
+  const it = {
+    fecha: new Date().toLocaleDateString('es-CO'),
+    hora: new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'}),
+    turno: document.getElementById('itTurno').value,
+    operario: document.getElementById('itOperario').value || '—',
+    rlu,
+    rluTipo: document.getElementById('itRLUTipo').value,
+    limpieza,
+    estado: ok ? '✓ APTA' : '✗ NO APTA',
+    notas: document.getElementById('itNotas').value
+  };
+  inicioTurnos.unshift(it);
+  guardarInicioTurnos();
+  renderInicioTurno();
+  // limpiar campos
+  ['itRLU','itOperario','itNotas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('itLimpieza').selectedIndex = 0;
+  document.getElementById('indITRLU').style.background = 'var(--border)';
+  document.getElementById('itRLUVerdict').className = 'rlu-badge badge-gray';
+  document.getElementById('itRLUVerdict').textContent = 'SIN LECTURA';
+  // colapsar sección
+  document.getElementById('inicioTurnoWrap').classList.add('inicio-turno-collapsed');
+  // Enviar a Google Sheets en segundo plano
+  enviarASheets({ tipo: 'inicio_turno', ...it });
+}
+
+function toggleInicioTurno() {
+  document.getElementById('inicioTurnoWrap').classList.toggle('inicio-turno-collapsed');
+}
+
+function borrarInicioTurnos() {
+  if (!confirm('¿Borrar todo el historial de verificaciones de inicio de turno?')) return;
+  inicioTurnos = [];
+  guardarInicioTurnos();
+  renderInicioTurno();
+}
+
+function renderInicioTurno() {
+  const tbody = document.getElementById('logITBody');
+  const hoy = new Date().toLocaleDateString('es-CO');
+  const estadoEl = document.getElementById('inicioTurnoEstado');
+
+  // Buscar verificación de hoy
+  const hoyIT = inicioTurnos.find(it => it.fecha === hoy);
+  if (hoyIT) {
+    const rluStatus = evalRLU(+hoyIT.rlu);
+    const ok = (rluStatus === 'green' || rluStatus === 'green2' || rluStatus === 'yellow') && hoyIT.limpieza !== 'Pendiente';
+    estadoEl.className = ok ? 'inicio-estado-ok' : 'inicio-estado-fail';
+    estadoEl.textContent = ok
+      ? `✓ Verificación de turno registrada — ${hoyIT.turno} | RLU: ${hoyIT.rlu || '—'} | Limpieza: ${hoyIT.limpieza || '—'} | ${hoyIT.hora}`
+      : `✗ Verificación con problemas — ${hoyIT.turno} | RLU: ${hoyIT.rlu || '—'} | Limpieza: ${hoyIT.limpieza || '—'} | ${hoyIT.hora}`;
+    // Actualizar stat card RLU
+    const rlu = evalRLU(+hoyIT.rlu);
+    const cr = document.getElementById('cardRLU');
+    const sr = document.getElementById('sRLU');
+    const srt = document.getElementById('sRLUTxt');
+    if (hoyIT.rlu) {
+      sr.textContent = hoyIT.rlu;
+      sr.className = 'stat-value ' + (rlu === 'green' || rlu === 'green2' ? 'green' : rlu || '');
+      cr.className = 'stat-card ' + (rlu === 'green' || rlu === 'green2' ? 'green' : rlu || 'neutral');
+      srt.textContent = evalRLULabel(+hoyIT.rlu) || '—';
+      srt.style.color = evalRLUColor(rlu);
+    }
+  } else {
+    estadoEl.className = 'inicio-estado-pendiente';
+    estadoEl.textContent = '⏳ Sin verificación registrada para este turno';
+  }
+
+  if (!inicioTurnos.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Sin verificaciones de inicio de turno aún.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = inicioTurnos.map(it => {
+    const rlu = evalRLU(+it.rlu);
+    const rluClass = rlu === 'red' ? 'color:var(--red)' : rlu === 'yellow' ? 'color:var(--yellow)' : (rlu === 'green' || rlu === 'green2') ? 'color:var(--green)' : '';
+    const ok = (rlu === 'green' || rlu === 'green2' || rlu === 'yellow') && it.limpieza !== 'Pendiente';
+    const estadoPill = ok ? '<span class="pill pill-green">APTA</span>' : '<span class="pill pill-red">NO APTA</span>';
+    return `<tr>
+      <td>${it.fecha}</td>
+      <td>${it.turno}</td>
+      <td>${it.operario}</td>
+      <td style="${rluClass}">${it.rlu || '—'}</td>
+      <td>${it.rluTipo || '—'}</td>
+      <td>${it.limpieza || '—'}</td>
+      <td>${estadoPill}</td>
+      <td style="max-width:150px;white-space:normal;font-size:11px">${it.notas || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── REGISTRAR (inspección horaria) ───
+async function registrar() {
+  const hora = document.getElementById('fHora').value;
+  if (!hora) { alert('Indica la hora de inspección.'); return; }
+
+  const apta = aptaProduccion({
+    polares: document.getElementById('fPolares').value,
+    temp: document.getElementById('fTemp').value,
+  });
+  const aptaText = apta === 'green' ? '✓ APTA' : apta === 'yellow' ? '⚡ PRECAUCIÓN' : '✗ NO APTA';
+
+  const r = {
+    fecha: new Date().toLocaleDateString('es-CO'),
+    hora,
+    turno: document.getElementById('fTurno').value,
+    operario: document.getElementById('fOperario').value || '—',
+    polares: document.getElementById('fPolares').value,
+    temp: document.getElementById('fTemp').value,
+    tiempo: document.getElementById('fTiempo').value,
+    notas: document.getElementById('fNotas').value,
+    apta: aptaText
+  };
+
+  registros.unshift(r);
+  guardarRegistros();
+  renderLog();
+  mostrarAlertas(r);
+  limpiarForm();
+
+  // Enviar a Google Sheets en segundo plano
+  enviarASheets({ tipo: 'inspeccion', ...r });
+}
+
+function mostrarAlertas(r) {
+  const alertBox = document.getElementById('alertBox');
+  const warnBox = document.getElementById('warnBox');
+  alertBox.classList.remove('show');
+  warnBox.classList.remove('show');
+
+  const alertas = [];
+  const warns = [];
+
+  const pol = evalPolares(+r.polares);
+  if (pol === 'red') alertas.push(`Compuestos polares (${r.polares}) NO CUMPLEN (>50) — Detener aceite, llamar Ingeniero de Calidad`);
+  else if (pol === 'yellow') warns.push(`Compuestos polares en LÍMITE (${r.polares}) — Tomar 2da lectura. Si confirma: llamar Ing. Calidad y considerar mezclar aceite`);
+
+  const tmp = evalTemp(+r.temp);
+  if (tmp === 'red') alertas.push(`Temperatura fuera de rango crítico (${r.temp}°C)`);
+  else if (tmp === 'yellow') warns.push(`Temperatura fuera de rango óptimo (${r.temp}°C)`);
+
+  if (alertas.length) {
+    document.getElementById('alertMsg').textContent = alertas.join(' | ');
+    alertBox.classList.add('show');
+  }
+  if (warns.length) {
+    document.getElementById('warnMsg').textContent = warns.join(' | ');
+    warnBox.classList.add('show');
+  }
+}
+
+// ─── RENDER ───
+function renderLog() {
+  const tbody = document.getElementById('logBody');
+  document.getElementById('recCount').textContent = registros.length + ' registros';
+  document.getElementById('sRegistros').textContent = registros.filter(r => r.fecha === new Date().toLocaleDateString('es-CO')).length;
+
+  if (registros.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="14"><div class="empty-state">Sin registros aún.</div></td></tr>';
+    resetStatCards();
+    return;
+  }
+
+  // Update stat cards with most recent
+  const last = registros[0];
+  updateStatCards(last);
+
+  tbody.innerHTML = registros.map(r => {
+    const apta = aptaProduccion(r);
+    const aptaLabel = apta === 'green' ? '<span class="pill pill-green">APTA</span>' : apta === 'yellow' ? '<span class="pill pill-yellow">PRECAUCIÓN</span>' : '<span class="pill pill-red">NO APTA</span>';
+    const polClass = (evalPolares(+r.polares) === 'red') ? 'color:var(--red)' : evalPolares(+r.polares) === 'yellow' ? 'color:var(--yellow)' : evalPolares(+r.polares) ? 'color:var(--green)' : '';
+    const tmpClass = evalTemp(+r.temp) === 'red' ? 'color:var(--red)' : evalTemp(+r.temp) === 'yellow' ? 'color:var(--yellow)' : '';
+    const rluClass = evalRLU(+r.rlu) === 'red' ? 'color:var(--red)' : evalRLU(+r.rlu) === 'yellow' ? 'color:var(--yellow)' : '';
+    return `<tr>
+      <td>${r.fecha}</td>
+      <td>${r.hora}</td>
+      <td>${r.turno}</td>
+      <td>${r.operario}</td>
+      <td style="${polClass}">${r.polares ? r.polares : '—'}</td>
+      <td style="${tmpClass}">${r.temp ? r.temp + '°C' : '—'}</td>
+      <td>${r.tiempo ? r.tiempo + ' min' : '—'}</td>
+      <td>${aptaLabel}</td>
+      <td style="max-width:150px;white-space:normal;font-size:11px">${r.notas || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+function updateStatCards(r) {
+  // Polares
+  const pol = evalPolares(+r.polares);
+  const cp = document.getElementById('cardPolares');
+  const sp = document.getElementById('sPolares');
+  const spt = document.getElementById('sPolaresTxt');
+  if (r.polares) {
+    sp.textContent = r.polares;
+    sp.className = 'stat-value ' + (pol === 'green' || pol === 'green2' ? 'green' : pol || '');
+    cp.className = 'stat-card ' + (pol === 'green' || pol === 'green2' ? 'green' : pol || 'neutral');
+    spt.textContent = evalPolaresLabel(+r.polares) || '—';
+    spt.style.color = evalPolaresColor(pol);
+  }
+  // Temp
+  const tmp = evalTemp(+r.temp);
+  const ct = document.getElementById('cardTemp');
+  const st = document.getElementById('sTemp');
+  const stt = document.getElementById('sTempTxt');
+  if (r.temp) {
+    st.textContent = r.temp + '°C';
+    st.className = 'stat-value ' + (tmp || '');
+    ct.className = 'stat-card ' + (tmp || 'neutral');
+    stt.textContent = tmp === 'green' ? '✓ Óptima' : tmp === 'yellow' ? '⚡ Fuera de rango' : '✗ Crítica';
+    stt.style.color = tmp === 'green' ? 'var(--green)' : tmp === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+  }
+  // RLU
+  const rlu = evalRLU(+r.rlu);
+  const cr = document.getElementById('cardRLU');
+  const sr = document.getElementById('sRLU');
+  const srt = document.getElementById('sRLUTxt');
+  if (r.rlu) {
+    sr.textContent = r.rlu;
+    sr.className = 'stat-value ' + (rlu || '');
+    cr.className = 'stat-card ' + (rlu || 'neutral');
+    srt.textContent = rlu === 'green' ? '✓ Superficie apta' : rlu === 'yellow' ? '⚡ Revisar limpieza' : '✗ No apta';
+    srt.style.color = rlu === 'green' ? 'var(--green)' : rlu === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+  }
+}
+
+function resetStatCards() {
+  ['cardPolares','cardTemp','cardRLU'].forEach(id => {
+    document.getElementById(id).className = 'stat-card neutral';
+  });
+}
+
+function limpiarForm() {
+  ['fPolares','fTemp','fTiempo','fNotas','fOperario'].forEach(id => document.getElementById(id).value = '');
+  ['indPolares','indTemp'].forEach(id => document.getElementById(id).style.background = 'var(--border)');
+  // clear polares recom box
+  const box = document.getElementById('polaresRecomBox');
+  if (box) box.style.display = 'none';
+  setHoraActual();
+}
+
+function borrarHistorial() {
+  if (!confirm('¿Seguro que deseas borrar todo el historial?')) return;
+  registros = [];
+  guardarRegistros();
+  renderLog();
+}
+
+async function exportarCSV() {
+  if (!registros.length) { alert('No hay datos para exportar.'); return; }
+  if (typeof ExcelJS === 'undefined') { alert('Librería de Excel cargando, intenta en un momento.'); return; }
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Control Freidora';
+  wb.created = new Date();
+
+  // ── HOJA 1: REGISTROS ──
+  const ws = wb.addWorksheet('Registros', { views: [{ state: 'frozen', ySplit: 3 }] });
+
+  // Título principal
+  ws.mergeCells('A1:N1');
+  const titleCell = ws.getCell('A1');
+  titleCell.value = `CONTROL DE FREIDORA — Planta Patacón   |   Exportado: ${new Date().toLocaleString('es-CO')}`;
+  titleCell.font = { name: 'Arial', bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D3349' } };
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.getRow(1).height = 28;
+
+  // Subtítulo con límites
+  ws.mergeCells('A2:N2');
+  const subCell = ws.getCell('A2');
+  subCell.value = `Límites → Polares: Excelente ≤10 / Aceptable ≤30 / Límite ≤50 / No cumple >50   |   Temperatura: ${L.tempMin}°C – ${L.tempMax}°C   |   RLU: Excelente ≤10 / Aceptable ≤30 / Advertencia ≤100 / No cumple >100`;
+  subCell.font = { name: 'Arial', italic: true, size: 9, color: { argb: 'FFADC8E0' } };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D3349' } };
+  subCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.getRow(2).height = 18;
+
+  // Encabezados
+  const cols = [
+    { header: 'Fecha', key: 'fecha', width: 14 },
+    { header: 'Hora', key: 'hora', width: 8 },
+    { header: 'Turno', key: 'turno', width: 10 },
+    { header: 'Operario', key: 'operario', width: 16 },
+    { header: 'Polares', key: 'polares', width: 13 },
+    { header: 'Temp (°C)', key: 'temp', width: 11 },
+    { header: 'T. Fritura (min)', key: 'tiempo', width: 16 },
+    { header: 'Apta Producción', key: 'apta', width: 16 },
+  ];
+  ws.columns = cols;
+
+  // Estilo encabezados fila 3
+  const headerRow = ws.getRow(3);
+  headerRow.values = cols.map(c => c.header);
+  headerRow.height = 22;
+  headerRow.eachCell(cell => {
+    cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B5E82' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { bottom: { style: 'medium', color: { argb: 'FF00B8D9' } } };
+  });
+
+  // COLOR helpers
+  const GREEN_BG = 'FFD6F5E3'; const GREEN_FG = 'FF1B7A40';
+  const YELLOW_BG = 'FFFFF9C4'; const YELLOW_FG = 'FF7A5F00';
+  const RED_BG = 'FFFCE4E4'; const RED_FG = 'FF9B1B1B';
+  const GRAY_BG = 'FFF5F5F5';
+
+  function colorCell(cell, status) {
+    const bg = status === 'green' ? GREEN_BG : status === 'yellow' ? YELLOW_BG : status === 'red' ? RED_BG : GRAY_BG;
+    const fg = status === 'green' ? GREEN_FG : status === 'yellow' ? YELLOW_FG : status === 'red' ? RED_FG : '5F5F5F';
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
+    cell.font = { name: 'Arial', size: 10, bold: ['green','red'].includes(status), color: { argb: 'FF' + fg.slice(2) } };
+  }
+
+  // DATA ROWS (starting row 4)
+  [...registros].reverse().forEach((r, i) => {
+    const rowNum = i + 4;
+    const pol = evalPolares(+r.polares);
+    const tmp = evalTemp(+r.temp);
+    const apta = aptaProduccion(r);
+
+    const aptaText = apta === 'green' ? '✓ APTA' : apta === 'yellow' ? '⚡ PRECAUCIÓN' : '✗ NO APTA';
+
+    const row = ws.addRow({
+      fecha: r.fecha,
+      hora: r.hora,
+      turno: r.turno,
+      operario: r.operario || '—',
+      polares: r.polares ? +r.polares : '—',
+      temp: r.temp ? +r.temp : '—',
+      tiempo: r.tiempo ? +r.tiempo : '—',
+      apta: aptaText,
+    });
+    row.height = 20;
+
+    // Fila alternada base
+    const rowBg = rowNum % 2 === 0 ? 'FFFAFAFA' : 'FFFFFFFF';
+    row.eachCell(cell => {
+      cell.font = { name: 'Arial', size: 10 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBg } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = { bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } } };
+    });
+
+    // Color por valor
+    if (pol) colorCell(row.getCell(5), pol === 'green2' ? 'green' : pol);
+    if (tmp) colorCell(row.getCell(6), tmp);
+    colorCell(row.getCell(8), apta === 'green' ? 'green' : apta === 'yellow' ? 'yellow' : 'red');
+  });
+
+  // Borde exterior tabla
+  const lastRow = registros.length + 3;
+  for (let r = 3; r <= lastRow; r++) {
+    const row = ws.getRow(r);
+    [1, 8].forEach(c => {
+      const cell = row.getCell(c);
+      if (c === 1) cell.border = { ...cell.border, left: { style: 'medium', color: { argb: 'FF1B5E82' } } };
+      else cell.border = { ...cell.border, right: { style: 'medium', color: { argb: 'FF1B5E82' } } };
+    });
+  }
+
+  // ── HOJA 2: RESUMEN ──
+  const ws2 = wb.addWorksheet('Resumen del Día');
+  ws2.columns = [{ width: 28 }, { width: 22 }, { width: 22 }, { width: 22 }];
+
+  const hoy = new Date().toLocaleDateString('es-CO');
+  const hoyReg = registros.filter(r => r.fecha === hoy);
+
+  ws2.mergeCells('A1:D1');
+  ws2.getCell('A1').value = `RESUMEN — ${hoy}`;
+  ws2.getCell('A1').font = { name: 'Arial', bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  ws2.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D3349' } };
+  ws2.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+  ws2.getRow(1).height = 30;
+
+  const hoyIT = inicioTurnos.find(it => it.fecha === hoy);
+  const resumenData = [
+    ['', '', '', ''],
+    ['INDICADOR', 'VALOR', 'ESTADO', 'LÍMITE'],
+    ['Inspecciones hoy', hoyReg.length, '', ''],
+    ['Registros APTOS', hoyReg.filter(r => aptaProduccion(r) === 'green').length, '', ''],
+    ['Registros PRECAUCIÓN', hoyReg.filter(r => aptaProduccion(r) === 'yellow').length, '', ''],
+    ['Registros NO APTOS', hoyReg.filter(r => aptaProduccion(r) === 'red').length, '', ''],
+    ['', '', '', ''],
+    ['Últ. Compuestos Polares', hoyReg[0]?.polares ? hoyReg[0].polares : '—', hoyReg[0]?.polares ? evalPolaresLabel(+hoyReg[0].polares) : '—', 'Excelente ≤10 / Acept. ≤30 / Límite ≤50'],
+    ['Últ. Temperatura', hoyReg[0]?.temp ? hoyReg[0].temp + '°C' : '—', hoyReg[0]?.temp ? (evalTemp(+hoyReg[0].temp) === 'green' ? '✓ OK' : '⚠ Revisar') : '—', `${L.tempMin}–${L.tempMax}°C`],
+    ['RLU Inicio Turno', hoyIT?.rlu || '—', hoyIT?.rlu ? (evalRLU(+hoyIT.rlu) === 'green' ? '✓ Apta' : evalRLU(+hoyIT.rlu) === 'yellow' ? '⚡ Precaución' : '✗ No apta') : '—', `≤ ${L.rluCrit}`],
+    ['Limpieza Inicio Turno', hoyIT?.limpieza || '—', hoyIT?.limpieza === 'Completa' ? '✓ OK' : hoyIT?.limpieza ? '⚡ Revisar' : '—', 'Completa'],
+  ];
+
+  resumenData.forEach((rowData, i) => {
+    const row = ws2.addRow(rowData);
+    if (i === 1) {
+      row.eachCell(cell => {
+        cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B5E82' } };
+        cell.alignment = { horizontal: 'center' };
+      });
+    }
+    row.height = 20;
+  });
+
+  // ── HOJA 3: INICIO DE TURNOS ──
+  if (inicioTurnos.length) {
+    const ws3 = wb.addWorksheet('Inicio de Turno');
+    ws3.columns = [
+      { header: 'Fecha', key: 'fecha', width: 14 },
+      { header: 'Hora', key: 'hora', width: 8 },
+      { header: 'Turno', key: 'turno', width: 10 },
+      { header: 'Operario', key: 'operario', width: 16 },
+      { header: 'RLU', key: 'rlu', width: 8 },
+      { header: 'Tipo RLU', key: 'rluTipo', width: 16 },
+      { header: 'Limpieza', key: 'limpieza', width: 14 },
+      { header: 'Estado', key: 'estado', width: 14 },
+      { header: 'Observaciones', key: 'notas', width: 30 },
+    ];
+    ws3.mergeCells('A1:I1');
+    ws3.getCell('A1').value = 'VERIFICACIONES DE INICIO DE TURNO';
+    ws3.getCell('A1').font = { name: 'Arial', bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+    ws3.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D3349' } };
+    ws3.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+    ws3.getRow(1).height = 28;
+    const h3 = ws3.getRow(2);
+    h3.values = ws3.columns.map(c => c.header);
+    h3.height = 20;
+    h3.eachCell(cell => {
+      cell.font = { name: 'Arial', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B5E82' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    [...inicioTurnos].reverse().forEach((it, i) => {
+      const rlu = evalRLU(+it.rlu);
+      const ok = rlu !== 'red' && it.limpieza !== 'Pendiente';
+      const row = ws3.addRow({
+        fecha: it.fecha, hora: it.hora, turno: it.turno, operario: it.operario || '—',
+        rlu: it.rlu ? +it.rlu : '—', rluTipo: it.rluTipo || '—',
+        limpieza: it.limpieza || '—', estado: ok ? '✓ APTA' : '✗ NO APTA',
+        notas: it.notas || '—',
+      });
+      row.height = 20;
+      const rowBg = i % 2 === 0 ? 'FFFAFAFA' : 'FFFFFFFF';
+      row.eachCell(cell => {
+        cell.font = { name: 'Arial', size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBg } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+      if (it.rlu) colorCell(row.getCell(5), rlu || 'neutral');
+      colorCell(row.getCell(8), ok ? 'green' : 'red');
+    });
+  }
+
+  // ── DESCARGAR ──
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `freidora_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── INIT ───
+cargarLimites();
+cargarRegistros();
+cargarInicioTurnos();
+setHoraActual();
+renderLog();
+renderInicioTurno();
+// Cargar datos desde Google Sheets (fuente de verdad)
+cargarDesdeSheets();
+</script>
+</body>
+</html>
