@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HACCP — Planta Patacón</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<style>
+:root {
+  --bg: #0d0f12; --surface: #161a1f; --surface2: #1e2328;
+  --border: #2a3040; --text: #e8eaf0; --muted: #6b7585;
+  --green: #00e676; --yellow: #ffd740; --red: #ff5252;
+  --accent: #00b8d9; --font-mono: 'Space Mono', monospace;
+  --font-main: 'Barlow Condensed', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-main); font-size: 16px; min-height: 100vh; }
+.nav-tabs { background: var(--surface); border-bottom: 2px solid var(--border); display: flex; overflow-x: auto; position: sticky; top: 0; z-index: 200; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab { padding: 16px 24px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand-title { font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+.brand-sub { font-size: 12px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 1px; }
+.header-clock { font-family: var(--font-mono); font-size: 22px; font-weight: 700; text-align: right; }
+.header-date { font-size: 12px; color: var(--muted); text-align: right; font-family: var(--font-mono); }
+.container { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.section-title { font-family: var(--font-mono); font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); margin: 24px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.field input, .field select, .field textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.2s; width: 100%; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+.field-indicator { height: 3px; border-radius: 2px; background: var(--border); margin-top: 2px; transition: background 0.3s; }
+.btn { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 12px 24px; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.status-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 20px 0; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.stat-card.green { border-color: var(--green); }
+.stat-card.yellow { border-color: var(--yellow); }
+.stat-card.red { border-color: var(--red); }
+.stat-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.stat-value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; }
+.stat-verdict { font-size: 12px; margin-top: 4px; font-family: var(--font-mono); }
+.alert-box, .warn-box { display: none; border-radius: 8px; padding: 14px 18px; font-family: var(--font-mono); font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+.alert-box { background: rgba(255,82,82,0.1); border: 1px solid var(--red); color: var(--red); }
+.warn-box { background: rgba(255,215,64,0.08); border: 1px solid var(--yellow); color: var(--yellow); }
+.alert-box.show, .warn-box.show { display: block; }
+.log-wrap { margin-top: 32px; overflow-x: auto; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+.records-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; }
+th { background: var(--surface2); color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: var(--surface); }
+.empty-state { text-align: center; padding: 40px; color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.pill-green { background: rgba(0,230,118,0.15); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+.pill-red { background: rgba(255,82,82,0.15); color: var(--red); border: 1px solid rgba(255,82,82,0.3); }
+.pill-yellow { background: rgba(255,215,64,0.15); color: var(--yellow); border: 1px solid rgba(255,215,64,0.3); }
+.inicio-turno-wrap { background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
+.inicio-estado-pendiente { background: rgba(255,215,64,0.08); border: 1px solid rgba(255,215,64,0.35); color: var(--yellow); padding: 10px 16px; border-radius: 6px; font-size: 13px; font-family: var(--font-mono); font-weight: 700; }
+.inicio-estado-ok { background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.35); color: var(--green); padding: 10px 16px; border-radius: 6px; font-size: 13px; font-family: var(--font-mono); font-weight: 700; }
+.inicio-estado-fail { background: rgba(255,82,82,0.08); border: 1px solid rgba(255,82,82,0.35); color: var(--red); padding: 10px 16px; border-radius: 6px; font-size: 13px; font-family: var(--font-mono); font-weight: 700; }
+.inicio-turno-collapsed .form-grid, .inicio-turno-collapsed .rlu-badge, .inicio-turno-collapsed > div:last-of-type { display: none; }
+.rlu-badge { display: inline-block; padding: 6px 18px; border-radius: 4px; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; border: 1px solid var(--border); color: var(--muted); }
+.badge-green { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.08); }
+.badge-red { border-color: var(--red); color: var(--red); background: rgba(255,82,82,0.08); }
+.badge-gray { border-color: var(--border); color: var(--muted); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-family: var(--font-mono); font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand-title">🍟 HACCP — Planta Patacón</div>
+    <div class="brand-sub">Sistema de Control de Calidad</div>
+  </div>
+  <div>
+    <div class="header-clock" id="clock">--:--:--</div>
+    <div class="header-date" id="dateStr">--</div>
+    <div id="syncEstado" style="font-size:11px;text-align:right;margin-top:4px;font-family:var(--font-mono);color:var(--muted)">⟳ Conectando...</div>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('mp', this)">📦 Recepción MP</button>
+  <button class="nav-tab" onclick="switchTab('freidora', this)">🍟 Freidora</button>
+</nav>
+
+<!-- ══════════════════════════════════════ -->
+<!-- TAB: RECEPCIÓN MP                     -->
+<!-- ══════════════════════════════════════ -->
+<div class="tab-content active" id="tab-mp">
+<div class="container">
+  <div class="alert-box" id="mpAlertBox">⚠ ACCIÓN REQUERIDA: <span id="mpAlertMsg"></span></div>
+  <div class="warn-box" id="mpWarnBox">⚡ ADVERTENCIA: <span id="mpWarnMsg"></span></div>
+
+  <div class="section-title">Nueva Recepción de Materia Prima</div>
+  <div class="form-grid">
+    <div class="field"><label>Fecha</label><input type="date" id="mpFecha"></div>
+    <div class="field">
+      <label>Tipo de Materia Prima</label>
+      <select id="mpTipo" onchange="toggleMpOtro()">
+        <option value="">— Seleccionar —</option>
+        <option value="Hawaiano">Hawaiano</option>
+        <option value="Comino">Comino</option>
+        <option value="Batata">Batata</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+    <div class="field" id="mpOtroField" style="display:none"><label>Especificar tipo</label><input type="text" id="mpOtro" placeholder="Nombre de la MP"></div>
+    <div class="field"><label>Cantidad Recibida (kg)</label><input type="number" id="mpCantidad" placeholder="ej. 500" min="0" step="0.1"></div>
+    <div class="field"><label>Proveedor</label><input type="text" id="mpProveedor" placeholder="Nombre del proveedor"></div>
+    <div class="field"><label>Código Proveedor</label><input type="text" id="mpCodigo" placeholder="ej. PRV-001"></div>
+    <div class="field"><label>Zona de Cultivo</label><input type="text" id="mpZona" placeholder="ej. Montería, Córdoba"></div>
+  </div>
+
+  <div class="section-title">Análisis Físico</div>
+  <div class="form-grid">
+    <div class="field"><label>Resultado Brix</label><input type="number" id="mpBrix" placeholder="ej. 18" min="0" max="40" step="0.1" oninput="evalMPIndicadores()"><div class="field-indicator" id="indBrix"></div></div>
+    <div class="field"><label>Longitud (cm)</label><input type="number" id="mpLongitud" placeholder="ej. 25" min="0" step="0.1" oninput="evalMPIndicadores()"><div class="field-indicator" id="indLongitud"></div></div>
+    <div class="field"><label>Diámetro (cm)</label><input type="number" id="mpDiametro" placeholder="ej. 5" min="0" step="0.1" oninput="evalMPIndicadores()"><div class="field-indicator" id="indDiametro"></div></div>
+    <div class="field"><label>Presencia de Moho</label><select id="mpMoho" onchange="evalMPIndicadores()"><option value="">— Seleccionar —</option><option value="No">No ✅</option><option value="Sí">Sí ❌</option></select></div>
+    <div class="field"><label>Estado del Empaque</label><select id="mpEmpaque"><option value="">— Seleccionar —</option><option value="Bueno">Bueno ✅</option><option value="Regular">Regular ⚡</option><option value="Malo">Malo ❌</option></select></div>
+    <div class="field"><label>Resultado</label><select id="mpResultado"><option value="">— Seleccionar —</option><option value="APTA">✅ APTA</option><option value="RECHAZADA">❌ RECHAZADA</option></select></div>
+  </div>
+
+  <div class="form-grid" style="grid-template-columns:1fr">
+    <div class="field"><label>Observaciones</label><textarea id="mpNotas" rows="2" placeholder="Notas adicionales..." style="font-family:var(--font-mono);font-size:13px;resize:vertical"></textarea></div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <button class="btn btn-primary" onclick="registrarMP()">Registrar Recepción</button>
+    <button class="btn btn-secondary" onclick="limpiarMP()">Limpiar</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('modalLimitesMP').classList.add('open')">⚙ Límites</button>
+  </div>
+
+  <div class="log-wrap">
+    <div class="toolbar" style="margin-top:32px">
+      <div class="section-title" style="margin:0">Historial — Recepciones MP</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="records-count" id="mpRecCount">0 registros</span>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px;color:var(--red);border-color:rgba(255,82,82,0.3)" onclick="borrarMP()">Borrar</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo MP</th><th>Cantidad</th><th>Proveedor</th><th>Brix</th><th>Longitud</th><th>Diámetro</th><th>Moho</th><th>Empaque</th><th>Resultado</th><th>Obs.</th></tr></thead>
+      <tbody id="mpLogBody"><tr><td colspan="11"><div class="empty-state">Sin registros aún.</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- TAB: FREIDORA                         -->
+<!-- ══════════════════════════════════════ -->
+<div class="tab-content" id="tab-freidora">
+<div class="container">
+
+  <div class="inicio-turno-wrap" id="inicioTurnoWrap">
+    <div class="section-title" style="margin-bottom:14px">🔬 Verificación Inicio de Turno</div>
+    <div id="inicioTurnoEstado" class="inicio-estado-pendiente">⏳ Sin verificación registrada para este turno</div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="field"><label>Turno</label><select id="itTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></div>
+      <div class="field"><label>Operario</label><input type="text" id="itOperario" placeholder="Nombre"></div>
+      <div class="field"><label>Resultado RLU</label><input type="number" id="itRLU" placeholder="ej. 25" min="0" step="1"><div class="field-indicator" id="indITRLU"></div></div>
+      <div class="field"><label>Tipo de Lectura</label><select id="itRLUTipo"><option value="Equipo (Freidora)">Equipo (Freidora)</option><option value="Agua de enjuague">Agua de enjuague</option></select></div>
+      <div class="field"><label>Limpieza / Desinfección</label><select id="itLimpieza"><option value="">— Seleccionar —</option><option value="Completa">Completa ✅</option><option value="Parcial">Parcial ⚡</option><option value="Pendiente">Pendiente ❌</option></select></div>
+      <div class="field"><label>Observaciones</label><input type="text" id="itNotas" placeholder="Notas de limpieza..."></div>
+    </div>
+    <div id="itRLUVerdict" class="rlu-badge badge-gray" style="margin-top:10px">SIN LECTURA</div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="registrarInicioTurno()">✔ Confirmar Inicio de Turno</button>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="stat-card neutral"><div class="stat-label">Registros Hoy</div><div class="stat-value" id="sRegistros" style="color:var(--accent)">0</div><div class="stat-verdict" style="color:var(--muted)">inspecciones</div></div>
+    <div class="stat-card neutral" id="cardPolares"><div class="stat-label">Últ. Compuestos Polares</div><div class="stat-value" id="sPolares">—</div><div class="stat-verdict" id="sPolaresTxt" style="color:var(--muted)">sin datos</div></div>
+    <div class="stat-card neutral" id="cardTemp"><div class="stat-label">Últ. Temperatura</div><div class="stat-value" id="sTemp">—</div><div class="stat-verdict" id="sTempTxt" style="color:var(--muted)">sin datos</div></div>
+    <div class="stat-card neutral" id="cardRLU"><div class="stat-label">RLU Inicio Turno</div><div class="stat-value" id="sRLU">—</div><div class="stat-verdict" id="sRLUTxt" style="color:var(--muted)">sin datos</div></div>
+  </div>
+
+  <div class="alert-box" id="alertBox">⚠ ACCIÓN REQUERIDA: <span id="alertMsg"></span></div>
+  <div class="warn-box" id="warnBox">⚡ ADVERTENCIA: <span id="warnMsg"></span></div>
+
+  <div class="section-title">Nueva Inspección — Cada Hora</div>
+  <div class="form-grid">
+    <div class="field"><label>Hora de Inspección</label><input type="time" id="fHora"></div>
+    <div class="field"><label>Turno</label><select id="fTurno"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></div>
+    <div class="field"><label>Operario</label><input type="text" id="fOperario" placeholder="Nombre"></div>
+  </div>
+  <div class="section-title">Aceite</div>
+  <div class="form-grid">
+    <div class="field"><label>Compuestos Polares (entero)</label><input type="number" id="fPolares" placeholder="0 – 50+" min="0" max="999" step="1"><div class="field-indicator" id="indPolares"></div></div>
+    <div class="field"><label>Temperatura (°C)</label><input type="number" id="fTemp" placeholder="ej. 175" min="100" max="220" step="0.5"><div class="field-indicator" id="indTemp"></div></div>
+    <div class="field"><label>Tiempo de Fritura (min)</label><input type="number" id="fTiempo" placeholder="ej. 4" min="0" max="60" step="0.5"></div>
+  </div>
+  <div class="form-grid" style="grid-template-columns:1fr">
+    <div class="field"><label>Observaciones</label><textarea id="fNotas" rows="2" style="font-family:var(--font-mono);font-size:13px;resize:vertical" placeholder="Notas adicionales..."></textarea></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <button class="btn btn-primary" onclick="registrar()">Registrar Inspección</button>
+    <button class="btn btn-secondary" onclick="limpiarForm()">Limpiar</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('modalLimites').classList.add('open')">⚙ Límites críticos</button>
+  </div>
+
+  <div class="log-wrap">
+    <div class="toolbar" style="margin-top:32px">
+      <div class="section-title" style="margin:0">Historial de Inspecciones</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="records-count" id="recCount">0 registros</span>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px" onclick="exportarExcel()">📥 Exportar Excel</button>
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px;color:var(--red);border-color:rgba(255,82,82,0.3)" onclick="borrarHistorial()">Borrar</button>
+      </div>
+    </div>
+    <table id="logTable">
+      <thead><tr><th>Fecha</th><th>Hora</th><th>Turno</th><th>Operario</th><th>Polares</th><th>Temp °C</th><th>T. Fritura</th><th>Apta</th><th>Obs.</th></tr></thead>
+      <tbody id="logBody"><tr><td colspan="9"><div class="empty-state">Sin registros aún.</div></td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="log-wrap">
+    <div class="toolbar" style="margin-top:32px">
+      <div class="section-title" style="margin:0">Historial — Verificaciones Inicio de Turno</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" style="padding:8px 16px;font-size:12px;color:var(--red);border-color:rgba(255,82,82,0.3)" onclick="borrarInicioTurnos()">Borrar</button>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Fecha</th><th>Turno</th><th>Operario</th><th>RLU</th><th>Tipo RLU</th><th>Limpieza</th><th>Estado</th><th>Obs.</th></tr></thead>
+      <tbody id="logITBody"><tr><td colspan="8"><div class="empty-state">Sin verificaciones aún.</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- MODALES -->
+<div class="modal-overlay" id="modalLimites">
+  <div class="modal">
+    <div class="modal-title">⚙ Límites — Freidora</div>
+    <div class="form-grid">
+      <div class="field"><label>Polares Advertencia (≤)</label><input type="number" id="limPolaresWarn" value="30"></div>
+      <div class="field"><label>Polares Crítico (≤)</label><input type="number" id="limPolaresCrit" value="50"></div>
+      <div class="field"><label>Temp. Mínima (°C)</label><input type="number" id="limTempMin" value="165"></div>
+      <div class="field"><label>Temp. Máxima (°C)</label><input type="number" id="limTempMax" value="185"></div>
+      <div class="field"><label>RLU Advertencia (≤)</label><input type="number" id="limRLUOk" value="30"></div>
+      <div class="field"><label>RLU Límite (≤)</label><input type="number" id="limRLUCrit" value="100"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="guardarLimites()">Guardar</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalLimites').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalLimitesMP">
+  <div class="modal">
+    <div class="modal-title">⚙ Límites — Recepción MP</div>
+    <div class="form-grid">
+      <div class="field"><label>Brix Mínimo</label><input type="number" id="limBrixMin" value="16" step="0.1"></div>
+      <div class="field"><label>Longitud Mínima (cm)</label><input type="number" id="limLongMin" value="20" step="0.1"></div>
+      <div class="field"><label>Longitud Máxima (cm)</label><input type="number" id="limLongMax" value="35" step="0.1"></div>
+      <div class="field"><label>Diámetro Mínimo (cm)</label><input type="number" id="limDiamMin" value="3" step="0.1"></div>
+      <div class="field"><label>Diámetro Máximo (cm)</label><input type="number" id="limDiamMax" value="8" step="0.1"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-primary" onclick="guardarLimitesMP()">Guardar</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modalLimitesMP').classList.remove('open')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyffxzsyckOd4Qb5JrvN-oD0TL0GB7DCtfZcJuA0qFgSx0JodXszOWGy6fzZxaa0X3Z/exec';
+
+async function enviarASheets(data) {
+  try {
+    const params = new URLSearchParams(data).toString();
+    await fetch(SHEETS_URL + '?' + params);
+    mostrarSyncEstado('ok');
+  } catch(e) { mostrarSyncEstado('error'); }
+}
+
+async function cargarDesdeSheets() {
+  try {
+    mostrarSyncEstado('syncing');
+    const res = await fetch(SHEETS_URL + '?t=' + Date.now());
+    const data = await res.json();
+    if (data.inspecciones) { registros = data.inspecciones.reverse(); localStorage.setItem('freidora_log', JSON.stringify(registros)); }
+    if (data.inicioTurnos) { inicioTurnos = data.inicioTurnos.reverse(); localStorage.setItem('freidora_inicio_turnos', JSON.stringify(inicioTurnos)); }
+    if (data.recepcionMP) { registrosMP = data.recepcionMP.reverse(); localStorage.setItem('haccp_mp', JSON.stringify(registrosMP)); }
+    renderLog(); renderInicioTurno(); renderMP();
+    mostrarSyncEstado('ok');
+  } catch(e) { mostrarSyncEstado('error'); }
+}
+
+function mostrarSyncEstado(estado) {
+  const el = document.getElementById('syncEstado');
+  if (!el) return;
+  if (estado === 'syncing') { el.textContent = '⟳ Sincronizando...'; el.style.color = 'var(--muted)'; }
+  else if (estado === 'ok') { el.textContent = '✓ Sincronizado con Google Sheets'; el.style.color = 'var(--green)'; }
+  else { el.textContent = '⚠ Sin conexión — datos locales'; el.style.color = 'var(--yellow)'; }
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('es-CO', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+function setHoraActual() {
+  const now = new Date();
+  const el = document.getElementById('fHora');
+  if (el) el.value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+// LIMITES FREIDORA
+let L = { polaresWarn:30, polaresCrit:50, tempMin:165, tempMax:185, rluOk:30, rluCrit:100 };
+function cargarLimites() {
+  const s = localStorage.getItem('freidora_limites');
+  if (s) L = JSON.parse(s);
+  document.getElementById('limPolaresWarn').value = L.polaresWarn;
+  document.getElementById('limPolaresCrit').value = L.polaresCrit;
+  document.getElementById('limTempMin').value = L.tempMin;
+  document.getElementById('limTempMax').value = L.tempMax;
+  document.getElementById('limRLUOk').value = L.rluOk;
+  document.getElementById('limRLUCrit').value = L.rluCrit;
+}
+function guardarLimites() {
+  L.polaresWarn = +document.getElementById('limPolaresWarn').value;
+  L.polaresCrit = +document.getElementById('limPolaresCrit').value;
+  L.tempMin = +document.getElementById('limTempMin').value;
+  L.tempMax = +document.getElementById('limTempMax').value;
+  L.rluOk = +document.getElementById('limRLUOk').value;
+  L.rluCrit = +document.getElementById('limRLUCrit').value;
+  localStorage.setItem('freidora_limites', JSON.stringify(L));
+  document.getElementById('modalLimites').classList.remove('open');
+  renderLog();
+}
+
+// LIMITES MP
+let LMP = { brixMin:16, longMin:20, longMax:35, diamMin:3, diamMax:8 };
+function cargarLimitesMP() {
+  const s = localStorage.getItem('haccp_limites_mp');
+  if (s) LMP = JSON.parse(s);
+  document.getElementById('limBrixMin').value = LMP.brixMin;
+  document.getElementById('limLongMin').value = LMP.longMin;
+  document.getElementById('limLongMax').value = LMP.longMax;
+  document.getElementById('limDiamMin').value = LMP.diamMin;
+  document.getElementById('limDiamMax').value = LMP.diamMax;
+}
+function guardarLimitesMP() {
+  LMP.brixMin = +document.getElementById('limBrixMin').value;
+  LMP.longMin = +document.getElementById('limLongMin').value;
+  LMP.longMax = +document.getElementById('limLongMax').value;
+  LMP.diamMin = +document.getElementById('limDiamMin').value;
+  LMP.diamMax = +document.getElementById('limDiamMax').value;
+  localStorage.setItem('haccp_limites_mp', JSON.stringify(LMP));
+  document.getElementById('modalLimitesMP').classList.remove('open');
+}
+
+// EVAL FREIDORA
+function evalPolares(v) {
+  if (v===''||isNaN(v)) return null;
+  if (v<=10) return 'green'; if (v<=30) return 'green2'; if (v<=50) return 'yellow'; return 'red';
+}
+function evalPolaresLabel(v) {
+  if (v<=10) return '✓ Excelente'; if (v<=30) return '✓ Aceptable'; if (v<=50) return '⚡ Límite'; return '✗ No cumple';
+}
+function evalTemp(v) {
+  if (!v&&v!==0) return null;
+  if (v>=L.tempMin&&v<=L.tempMax) return 'green';
+  if (v>=L.tempMin-5&&v<=L.tempMax+5) return 'yellow'; return 'red';
+}
+function evalRLU(v) {
+  if (v===''||isNaN(v)||v===undefined) return null;
+  if (v<=10) return 'green'; if (v<=30) return 'green2'; if (v<=100) return 'yellow'; return 'red';
+}
+function evalRLULabel(v) {
+  if (v<=10) return '✓ Excelente / Muy limpio'; if (v<=30) return '✓ Aceptable';
+  if (v<=100) return '⚡ Advertencia — Mejorar limpieza'; return '✗ No cumple — Superficie sucia';
+}
+function evalRLUColor(s) {
+  if (s==='green'||s==='green2') return 'var(--green)';
+  if (s==='yellow') return 'var(--yellow)'; if (s==='red') return 'var(--red)'; return 'var(--muted)';
+}
+function aptaProduccion(r) {
+  const pol = evalPolares(+r.polares); const temp = evalTemp(+r.temp);
+  if (pol==='red'||temp==='red') return 'red';
+  if (pol==='yellow'||temp==='yellow') return 'yellow'; return 'green';
+}
+
+// EVAL MP
+function evalBrix(v) { if (!v&&v!==0) return null; return v>=LMP.brixMin?'green':'red'; }
+function evalLongitud(v) { if (!v&&v!==0) return null; return (v>=LMP.longMin&&v<=LMP.longMax)?'green':'yellow'; }
+function evalDiametro(v) { if (!v&&v!==0) return null; return (v>=LMP.diamMin&&v<=LMP.diamMax)?'green':'yellow'; }
+function evalMPIndicadores() {
+  const brix = +document.getElementById('mpBrix').value;
+  const long = +document.getElementById('mpLongitud').value;
+  const diam = +document.getElementById('mpDiametro').value;
+  const moho = document.getElementById('mpMoho').value;
+  const cm = {green:'var(--green)',yellow:'var(--yellow)',red:'var(--red)'};
+  const cb=evalBrix(brix); const cl=evalLongitud(long); const cd=evalDiametro(diam);
+  if(cb) document.getElementById('indBrix').style.background = cm[cb]||'var(--border)';
+  if(cl) document.getElementById('indLongitud').style.background = cm[cl]||'var(--border)';
+  if(cd) document.getElementById('indDiametro').style.background = cm[cd]||'var(--border)';
+  const alertBox = document.getElementById('mpAlertBox');
+  if (moho==='Sí') { document.getElementById('mpAlertMsg').textContent='Presencia de moho — Rechazar lote'; alertBox.classList.add('show'); }
+  else { alertBox.classList.remove('show'); }
+}
+function toggleMpOtro() {
+  document.getElementById('mpOtroField').style.display = document.getElementById('mpTipo').value==='Otro'?'block':'none';
+}
+
+// STORAGE
+let registros = [];
+function cargarRegistros() { const s=localStorage.getItem('freidora_log'); if(s) registros=JSON.parse(s); }
+function guardarRegistros() { localStorage.setItem('freidora_log', JSON.stringify(registros)); }
+let inicioTurnos = [];
+function cargarInicioTurnos() { const s=localStorage.getItem('freidora_inicio_turnos'); if(s) inicioTurnos=JSON.parse(s); }
+function guardarInicioTurnos() { localStorage.setItem('freidora_inicio_turnos', JSON.stringify(inicioTurnos)); }
+let registrosMP = [];
+function cargarRegistrosMP() { const s=localStorage.getItem('haccp_mp'); if(s) registrosMP=JSON.parse(s); }
+function guardarRegistrosMP() { localStorage.setItem('haccp_mp', JSON.stringify(registrosMP)); }
+
+// RLU LISTENER
+document.getElementById('itRLU').addEventListener('input', function() {
+  const v=+this.value; const c=evalRLU(v);
+  document.getElementById('indITRLU').style.background=evalRLUColor(c);
+  const verdict=document.getElementById('itRLUVerdict');
+  if(!this.value){verdict.className='rlu-badge badge-gray';verdict.style='';verdict.textContent='SIN LECTURA';return;}
+  const label=evalRLULabel(v);
+  if(c==='green'||c==='green2'){verdict.className='rlu-badge badge-green';verdict.style='';verdict.textContent=label;}
+  else if(c==='yellow'){verdict.style.cssText='display:inline-block;padding:6px 18px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-top:10px;border:1px solid var(--yellow);color:var(--yellow);background:rgba(255,215,64,0.1)';verdict.textContent=label;}
+  else{verdict.className='rlu-badge badge-red';verdict.style='';verdict.textContent=label;}
+});
+document.getElementById('fPolares').addEventListener('input', function() {
+  const c=evalPolares(+this.value);
+  const cm={green:'var(--green)',green2:'var(--green)',yellow:'var(--yellow)',red:'var(--red)'};
+  document.getElementById('indPolares').style.background=cm[c]||'var(--border)';
+});
+document.getElementById('fTemp').addEventListener('input', function() {
+  const c=evalTemp(+this.value);
+  const cm={green:'var(--green)',yellow:'var(--yellow)',red:'var(--red)'};
+  document.getElementById('indTemp').style.background=cm[c]||'var(--border)';
+});
+
+// INICIO DE TURNO
+function registrarInicioTurno() {
+  const rlu=document.getElementById('itRLU').value;
+  const limpieza=document.getElementById('itLimpieza').value;
+  if(!rlu&&!limpieza){alert('Ingresa al menos el RLU o el estado de limpieza.');return;}
+  const rluStatus=evalRLU(+rlu);
+  const ok=(rluStatus==='green'||rluStatus==='green2'||rluStatus==='yellow')&&limpieza!=='Pendiente';
+  const it={
+    fecha:new Date().toLocaleDateString('es-CO'),
+    hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),
+    turno:document.getElementById('itTurno').value,
+    operario:document.getElementById('itOperario').value||'—',
+    rlu, rluTipo:document.getElementById('itRLUTipo').value,
+    limpieza, estado:ok?'✓ APTA':'✗ NO APTA',
+    notas:document.getElementById('itNotas').value
+  };
+  inicioTurnos.unshift(it); guardarInicioTurnos(); renderInicioTurno();
+  ['itRLU','itOperario','itNotas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('itLimpieza').selectedIndex=0;
+  document.getElementById('indITRLU').style.background='var(--border)';
+  document.getElementById('itRLUVerdict').className='rlu-badge badge-gray';
+  document.getElementById('itRLUVerdict').textContent='SIN LECTURA';
+  document.getElementById('inicioTurnoWrap').classList.add('inicio-turno-collapsed');
+  enviarASheets({tipo:'inicio_turno',...it});
+}
+function borrarInicioTurnos() {
+  if(!confirm('¿Borrar historial de verificaciones?'))return;
+  inicioTurnos=[];guardarInicioTurnos();renderInicioTurno();
+}
+function renderInicioTurno() {
+  const tbody=document.getElementById('logITBody');
+  const hoy=new Date().toLocaleDateString('es-CO');
+  const estadoEl=document.getElementById('inicioTurnoEstado');
+  const hoyIT=inicioTurnos.find(it=>it.fecha===hoy);
+  if(hoyIT){
+    const rs=evalRLU(+hoyIT.rlu);
+    const ok=(rs==='green'||rs==='green2'||rs==='yellow')&&hoyIT.limpieza!=='Pendiente';
+    estadoEl.className=ok?'inicio-estado-ok':'inicio-estado-fail';
+    estadoEl.textContent=ok?`✓ Verificación registrada — ${hoyIT.turno} | RLU: ${hoyIT.rlu||'—'} | Limpieza: ${hoyIT.limpieza||'—'} | ${hoyIT.hora}`:`✗ Verificación con problemas — ${hoyIT.turno} | ${hoyIT.hora}`;
+    if(hoyIT.rlu){
+      const rlu=evalRLU(+hoyIT.rlu);
+      document.getElementById('sRLU').textContent=hoyIT.rlu;
+      document.getElementById('sRLUTxt').textContent=evalRLULabel(+hoyIT.rlu);
+      document.getElementById('sRLUTxt').style.color=evalRLUColor(rlu);
+      document.getElementById('cardRLU').className='stat-card '+((rlu==='green'||rlu==='green2')?'green':rlu||'neutral');
+    }
+  } else {
+    estadoEl.className='inicio-estado-pendiente';
+    estadoEl.textContent='⏳ Sin verificación registrada para este turno';
+  }
+  if(!inicioTurnos.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state">Sin verificaciones aún.</div></td></tr>';return;}
+  tbody.innerHTML=inicioTurnos.map(it=>{
+    const ok=evalRLU(+it.rlu)!=='red'&&it.limpieza!=='Pendiente';
+    return `<tr><td>${it.fecha}</td><td>${it.turno}</td><td>${it.operario}</td><td>${it.rlu||'—'}</td><td>${it.rluTipo||'—'}</td><td>${it.limpieza||'—'}</td><td><span class="pill ${ok?'pill-green':'pill-red'}">${it.estado||''}</span></td><td style="font-size:11px">${it.notas||'—'}</td></tr>`;
+  }).join('');
+}
+
+// REGISTRAR FREIDORA
+async function registrar() {
+  const hora=document.getElementById('fHora').value;
+  if(!hora){alert('Indica la hora de inspección.');return;}
+  const apta=aptaProduccion({polares:document.getElementById('fPolares').value,temp:document.getElementById('fTemp').value});
+  const aptaText=apta==='green'?'✓ APTA':apta==='yellow'?'⚡ PRECAUCIÓN':'✗ NO APTA';
+  const r={
+    fecha:new Date().toLocaleDateString('es-CO'),hora,
+    turno:document.getElementById('fTurno').value,
+    operario:document.getElementById('fOperario').value||'—',
+    polares:document.getElementById('fPolares').value,
+    temp:document.getElementById('fTemp').value,
+    tiempo:document.getElementById('fTiempo').value,
+    notas:document.getElementById('fNotas').value,
+    apta:aptaText
+  };
+  registros.unshift(r);guardarRegistros();renderLog();mostrarAlertas(r);limpiarForm();
+  enviarASheets({tipo:'inspeccion',...r});
+}
+function mostrarAlertas(r) {
+  const ab=document.getElementById('alertBox'); const wb=document.getElementById('warnBox');
+  ab.classList.remove('show'); wb.classList.remove('show');
+  const alertas=[]; const warns=[];
+  const pol=evalPolares(+r.polares);
+  if(pol==='red') alertas.push(`Compuestos polares (${r.polares}) NO CUMPLEN — Detener aceite`);
+  else if(pol==='yellow') warns.push(`Compuestos polares en LÍMITE (${r.polares}) — Tomar 2da lectura`);
+  const tmp=evalTemp(+r.temp);
+  if(tmp==='red') alertas.push(`Temperatura fuera de rango crítico (${r.temp}°C)`);
+  else if(tmp==='yellow') warns.push(`Temperatura fuera de rango óptimo (${r.temp}°C)`);
+  if(alertas.length){document.getElementById('alertMsg').textContent=alertas.join(' | ');ab.classList.add('show');}
+  if(warns.length){document.getElementById('warnMsg').textContent=warns.join(' | ');wb.classList.add('show');}
+}
+function renderLog() {
+  const tbody=document.getElementById('logBody');
+  const hoy=new Date().toLocaleDateString('es-CO');
+  const hoyReg=registros.filter(r=>r.fecha===hoy);
+  document.getElementById('sRegistros').textContent=hoyReg.length;
+  if(hoyReg[0]){
+    const pol=evalPolares(+hoyReg[0].polares); const tmp=evalTemp(+hoyReg[0].temp);
+    document.getElementById('sPolares').textContent=hoyReg[0].polares||'—';
+    document.getElementById('sPolares').style.color=pol==='green'||pol==='green2'?'var(--green)':pol==='yellow'?'var(--yellow)':pol==='red'?'var(--red)':'var(--text)';
+    document.getElementById('sPolaresTxt').textContent=hoyReg[0].polares?evalPolaresLabel(+hoyReg[0].polares):'sin datos';
+    document.getElementById('cardPolares').className='stat-card '+(pol==='green'||pol==='green2'?'green':pol||'neutral');
+    document.getElementById('sTemp').textContent=hoyReg[0].temp?hoyReg[0].temp+'°C':'—';
+    document.getElementById('sTemp').style.color=tmp==='green'?'var(--green)':tmp==='yellow'?'var(--yellow)':tmp==='red'?'var(--red)':'var(--text)';
+    document.getElementById('sTempTxt').textContent=tmp==='green'?'✓ Temperatura OK':tmp==='yellow'?'⚡ Revisar':tmp==='red'?'✗ Crítica':'sin datos';
+    document.getElementById('cardTemp').className='stat-card '+(tmp||'neutral');
+  }
+  document.getElementById('recCount').textContent=registros.length+' registros';
+  if(!registros.length){tbody.innerHTML='<tr><td colspan="9"><div class="empty-state">Sin registros aún.</div></td></tr>';return;}
+  tbody.innerHTML=registros.map(r=>{
+    const pol=evalPolares(+r.polares); const tmp=evalTemp(+r.temp); const apta=aptaProduccion(r);
+    const pc=pol==='green'||pol==='green2'?'color:var(--green)':pol==='yellow'?'color:var(--yellow)':pol==='red'?'color:var(--red)':'';
+    const tc=tmp==='green'?'color:var(--green)':tmp==='yellow'?'color:var(--yellow)':tmp==='red'?'color:var(--red)':'';
+    const al=apta==='green'?'<span class="pill pill-green">APTA</span>':apta==='yellow'?'<span class="pill pill-yellow">PRECAUCIÓN</span>':'<span class="pill pill-red">NO APTA</span>';
+    return `<tr><td>${r.fecha}</td><td>${r.hora}</td><td>${r.turno}</td><td>${r.operario}</td><td style="${pc}">${r.polares||'—'}</td><td style="${tc}">${r.temp?r.temp+'°C':'—'}</td><td>${r.tiempo?r.tiempo+' min':'—'}</td><td>${al}</td><td style="font-size:11px;max-width:150px;white-space:normal">${r.notas||'—'}</td></tr>`;
+  }).join('');
+}
+function limpiarForm() {
+  ['fPolares','fTemp','fTiempo','fNotas','fOperario'].forEach(id=>document.getElementById(id).value='');
+  ['indPolares','indTemp'].forEach(id=>document.getElementById(id).style.background='var(--border)');
+  setHoraActual();
+}
+function borrarHistorial() {
+  if(!confirm('¿Borrar todo el historial?'))return;
+  registros=[];guardarRegistros();renderLog();
+}
+
+// REGISTRAR MP
+async function registrarMP() {
+  const tipo=document.getElementById('mpTipo').value;
+  if(!tipo){alert('Selecciona el tipo de materia prima.');return;}
+  const resultado=document.getElementById('mpResultado').value;
+  if(!resultado){alert('Selecciona el resultado APTA o RECHAZADA.');return;}
+  const tipoFinal=tipo==='Otro'?(document.getElementById('mpOtro').value||'Otro'):tipo;
+  const r={
+    fecha:document.getElementById('mpFecha').value||new Date().toLocaleDateString('es-CO'),
+    tipoMP:tipoFinal,
+    cantidad:document.getElementById('mpCantidad').value,
+    proveedor:document.getElementById('mpProveedor').value||'—',
+    codigo:document.getElementById('mpCodigo').value||'—',
+    zona:document.getElementById('mpZona').value||'—',
+    brix:document.getElementById('mpBrix').value,
+    longitud:document.getElementById('mpLongitud').value,
+    diametro:document.getElementById('mpDiametro').value,
+    moho:document.getElementById('mpMoho').value,
+    empaque:document.getElementById('mpEmpaque').value,
+    resultado,
+    notas:document.getElementById('mpNotas').value
+  };
+  registrosMP.unshift(r);guardarRegistrosMP();renderMP();
+  const alertBox=document.getElementById('mpAlertBox');
+  alertBox.classList.remove('show');
+  if(r.moho==='Sí'){document.getElementById('mpAlertMsg').textContent='Presencia de moho — Lote RECHAZADO';alertBox.classList.add('show');}
+  else if(resultado==='RECHAZADA'){document.getElementById('mpAlertMsg').textContent=`Lote RECHAZADO — ${tipoFinal} de ${r.proveedor}`;alertBox.classList.add('show');}
+  limpiarMP();
+  enviarASheets({tipo:'recepcion_mp',...r});
+}
+function renderMP() {
+  const tbody=document.getElementById('mpLogBody');
+  document.getElementById('mpRecCount').textContent=registrosMP.length+' registros';
+  if(!registrosMP.length){tbody.innerHTML='<tr><td colspan="11"><div class="empty-state">Sin registros aún.</div></td></tr>';return;}
+  tbody.innerHTML=registrosMP.map(r=>{
+    const bc=evalBrix(+r.brix);
+    const bs=bc==='green'?'color:var(--green)':bc==='red'?'color:var(--red)':'';
+    const ap=r.resultado==='APTA'?'<span class="pill pill-green">APTA</span>':'<span class="pill pill-red">RECHAZADA</span>';
+    const mp=r.moho==='Sí'?'<span class="pill pill-red">SÍ</span>':r.moho==='No'?'<span class="pill pill-green">NO</span>':'—';
+    return `<tr><td>${r.fecha}</td><td>${r.tipoMP||r.tipo||'—'}</td><td>${r.cantidad?r.cantidad+' kg':'—'}</td><td>${r.proveedor}</td><td style="${bs}">${r.brix||'—'}</td><td>${r.longitud?r.longitud+' cm':'—'}</td><td>${r.diametro?r.diametro+' cm':'—'}</td><td>${mp}</td><td>${r.empaque||'—'}</td><td>${ap}</td><td style="font-size:11px;max-width:120px;white-space:normal">${r.notas||'—'}</td></tr>`;
+  }).join('');
+}
+function limpiarMP() {
+  ['mpCantidad','mpProveedor','mpCodigo','mpZona','mpBrix','mpLongitud','mpDiametro','mpNotas','mpOtro'].forEach(id=>document.getElementById(id).value='');
+  ['mpTipo','mpMoho','mpEmpaque','mpResultado'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  ['indBrix','indLongitud','indDiametro'].forEach(id=>document.getElementById(id).style.background='var(--border)');
+  document.getElementById('mpOtroField').style.display='none';
+  document.getElementById('mpFecha').value=new Date().toISOString().slice(0,10);
+}
+function borrarMP() {
+  if(!confirm('¿Borrar historial de recepciones MP?'))return;
+  registrosMP=[];guardarRegistrosMP();renderMP();
+}
+
+async function exportarExcel() {
+  if(!registros.length){alert('No hay datos para exportar.');return;}
+  if(typeof ExcelJS==='undefined'){alert('Librería cargando, intenta en un momento.');return;}
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('Inspecciones Freidora');
+  ws.columns=[
+    {header:'Fecha',key:'fecha',width:14},{header:'Hora',key:'hora',width:8},
+    {header:'Turno',key:'turno',width:10},{header:'Operario',key:'operario',width:16},
+    {header:'Polares',key:'polares',width:13},{header:'Temp (°C)',key:'temp',width:11},
+    {header:'T. Fritura',key:'tiempo',width:14},{header:'Apta',key:'apta',width:16},
+  ];
+  ws.getRow(1).eachCell(cell=>{cell.font={bold:true,color:{argb:'FFFFFFFF'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1B5E82'}};});
+  [...registros].reverse().forEach(r=>ws.addRow(r));
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`haccp_freidora_${new Date().toISOString().slice(0,10)}.xlsx`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// INIT
+cargarLimites(); cargarLimitesMP();
+cargarRegistros(); cargarInicioTurnos(); cargarRegistrosMP();
+setHoraActual();
+document.getElementById('mpFecha').value=new Date().toISOString().slice(0,10);
+renderLog(); renderInicioTurno(); renderMP();
+cargarDesdeSheets();
+</script>
+</body>
+</html>
